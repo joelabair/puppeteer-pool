@@ -36,6 +36,7 @@
     "node": ">=6"
   },
   "devDependencies": {
+    "phantom": "^4.0.12",
     "babel-cli": "^6.18.0",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
@@ -64,7 +65,6 @@
   "dependencies": {
     "debug": "^2.3.3",
     "generic-pool": "^3.1.4",
-    "phantom": "^4.0.12",
     "puppeteer": "^1.1.1"
   }
 }
