@@ -8,27 +8,27 @@ const getState = ({ size, available, pending, max, min }) => {
 
 const inUse = ({ size, available }) => size - available
 
-let phantomPool
+let puppPool
 test('create pool', async () => {
-  phantomPool = createPool()
+  puppPool = createPool()
 })
 
 test('create pool', async (t) => {
-  const instance = await phantomPool.acquire()
-  const page = await instance.createPage()
-  const viewportSize = await page.property('viewportSize')
-  t.deepEqual(viewportSize, { height: 300, width: 400 })
-  await phantomPool.release(instance)
+  const instance = await puppPool.acquire()
+  const page = await instance.newPage()
+  const viewportSize = await page.viewport()
+  t.deepEqual(viewportSize, { height: 600, width: 800 })
+  await puppPool.release(instance)
 })
 
 test('create some pools', async (t) => {
   const instances = await Promise.all([
-    phantomPool.acquire(),
-    phantomPool.acquire(),
-    phantomPool.acquire(),
-    phantomPool.acquire(),
+    puppPool.acquire(),
+    puppPool.acquire(),
+    puppPool.acquire(),
+    puppPool.acquire(),
   ])
-  t.deepEqual(getState(phantomPool), {
+  t.deepEqual(getState(puppPool), {
     available: 0,
     pending: 0,
     max: 10,
@@ -36,16 +36,16 @@ test('create some pools', async (t) => {
     size: 4,
   })
   const [firstInstance, ...otherInstances] = instances
-  await phantomPool.release(firstInstance)
-  t.deepEqual(getState(phantomPool), {
+  await puppPool.release(firstInstance)
+  t.deepEqual(getState(puppPool), {
     available: 1,
     pending: 0,
     max: 10,
     min: 2,
     size: 4,
   })
-  await Promise.all(otherInstances.map(instance => phantomPool.release(instance)))
-  t.deepEqual(getState(phantomPool), {
+  await Promise.all(otherInstances.map(instance => puppPool.release(instance)))
+  t.deepEqual(getState(puppPool), {
     available: 4,
     pending: 0,
     max: 10,
@@ -55,30 +55,30 @@ test('create some pools', async (t) => {
 })
 
 test('use', async (t) => {
-  t.equal(inUse(phantomPool), 0)
-  const result = await phantomPool.use(async (instance) => {
-    t.equal(inUse(phantomPool), 1)
-    const page = await instance.createPage()
-    return page.setting('javascriptEnabled')
+  t.equal(inUse(puppPool), 0)
+  const result = await puppPool.use(async (instance) => {
+    t.equal(inUse(puppPool), 1)
+    const page = await instance.newPage()
+    return page.setJavaScriptEnabled(true).then(() => true)
   })
   t.equal(result, true)
-  t.equal(inUse(phantomPool), 0)
+  t.equal(inUse(puppPool), 0)
 })
 
 test('use and throw', async (t) => {
-  t.equal(inUse(phantomPool), 0)
+  t.equal(inUse(puppPool), 0)
   try {
-    await phantomPool.use(async () => {
-      t.equal(inUse(phantomPool), 1)
+    await puppPool.use(async () => {
+      t.equal(inUse(puppPool), 1)
       throw new Error('some err')
     })
   } catch (err) {
     t.equal(err.message, 'some err')
   }
-  t.equal(inUse(phantomPool), 0)
+  t.equal(inUse(puppPool), 0)
 })
 
 test('destroy pool', async () => {
-  await phantomPool.drain()
-  return phantomPool.clear()
+  await puppPool.drain()
+  return puppPool.clear()
 })

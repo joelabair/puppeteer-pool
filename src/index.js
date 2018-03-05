@@ -1,7 +1,12 @@
 import puppeteer from 'puppeteer'
+
 import genericPool from 'generic-pool'
+
 import initDebug from 'debug'
+
 const debug = initDebug('puppeteer-pool')
+
+let iid = 0
 
 const initPuppeteerPool = ({
   max = 10,
@@ -20,15 +25,16 @@ const initPuppeteerPool = ({
   const factory = {
     create: () => puppeteer.launch(...puppeteerArgs).then(instance => {
       instance.useCount = 0
+      instance.id = ++iid
+      debug(`puppeteer browser instance #${instance.id} created.`)
       return instance
     }),
     destroy: (instance) => {
       instance.close()
+      debug(`puppeteer browser instance #${instance.id} destroyed.`)
     },
-    validate: (instance) => {
-      return validator(instance)
-        .then(valid => Promise.resolve(valid && (maxUses <= 0 || instance.useCount < maxUses)))
-    },
+    validate: (instance) => validator(instance)
+      .then(valid => Promise.resolve(valid && (maxUses <= 0 || instance.useCount < maxUses))),
   }
   const config = {
     max,
@@ -47,6 +53,7 @@ const initPuppeteerPool = ({
     let resource
     return pool.acquire()
       .then(r => {
+        debug(`acquired puppeteer browser instance #${r.id} - uses ${r.useCount}.`)
         resource = r
         return resource
       })

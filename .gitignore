@@ -36,5 +36,5 @@ node_modules
 data/
 
 # Build directory
-lib/
+#lib/
 .npmrc
